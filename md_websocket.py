@@ -28,6 +28,8 @@ def get_url(venue):
         url = 'wss://indexer.v4testnet.dydx.exchange/v4/ws' # success
     elif venue == 'BYBIT_TESTNET':
         url = 'wss://stream-testnet.bybit.com/v5/public' # US blocked
+    elif venue == 'BYBIT_SPOT':
+        url = 'wss://stream.bybit.com/v5/public/spot' # success
     elif venue.startswith('BYBIT'):
         url = 'wss://stream.bybit.com/v5/public' # US blocked
     elif venue == 'GATE_SPOT_TESTNET':
@@ -91,10 +93,10 @@ def get_message(venue):
     elif venue == 'BYBIT_SPOT':
         msg = {
             "op": "subscribe",
-            "args": [{
+            "args": [
                 "orderbook.50.BTCUSDT",
                 "publicTrade.BTCUSDT"
-            }]
+            ]
         }
     elif venue.startswith('GATE_SPOT'):
         msg = {
