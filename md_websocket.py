@@ -13,9 +13,10 @@ def get_url(venue):
         url = 'wss://ws-api.testnet.binance.vision:443/ws-api/v3' # 443 or 9443, US blocked
     elif venue == 'BINANCE_FUTURES':
         url = 'wss://fstream.binance.com/ws' # US blocked
-    elif venue == 'OKX':
+    #elif venue == 'OKX':
+    elif venue.startswith('OKX') and 'DEMO' not in venue:
         url = 'wss://ws.okx.com:8443/ws/v5/public' # success
-    elif venue == 'OKX_DEMO':
+    elif venue.startswith('OKX') and 'DEMO' in venue:
         url = 'wss://wspap.okx.com:8443/ws/v5/public' # success
     elif venue == 'HYPERLIQUID':
         url = 'wss://api.hyperliquid.xyz/ws' # success
@@ -55,12 +56,20 @@ def get_message(venue):
             "params": ["btcusdt@ticker"],
             "id": 1
         }
-    elif venue == 'OKX_SPOT':
+    elif venue.startswith('OKX') and 'SPOT' in venue:
         msg = {
             "op": "subscribe",
             "args": [{
                 "channel": "tickers",
                 "instId": "BTC-USDT"
+            }]
+        }
+    elif venue.startswith('OKX') and 'FUTURES' in venue:
+        msg = {
+            "op": "subscribe",
+            "args": [{
+                "channel": "tickers",
+                "instId": "BTC-USDT-SWAP"
             }]
         }
     elif venue.startswith('HYPERLIQUID'):
