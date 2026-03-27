@@ -36,33 +36,46 @@ python md_websocket.py -v <VENUE>
 
 ## Supported venues
 
-The script includes URL/subscription mappings for these venue strings:
+The script contains venue mappings in code. For reliable end-to-end behavior
+(URL mapping + non-empty subscription message), use these venue strings:
 
 - `BINANCEUS_SPOT`
 - `BINANCE_SPOT`
 - `BINANCE_SPOT_TESTNET`
-- `BINANCE_FUTURES`
-- `OKX`
-- `OKX_DEMO`
+- `OKX_SPOT`
+- `OKX_FUTURES`
+- `OKX_DEMO_SPOT`
+- `OKX_DEMO_FUTURES`
 - `HYPERLIQUID`
 - `HYPERLIQUID_TESTNET`
 - `DYDX`
 - `DYDX_TESTNET`
-- `BYBIT_TESTNET`
-- `BYBIT_SPOT` (message mapping exists)
+- `BYBIT_SPOT_TESTNET`
+- `BYBIT_SPOT`
+- `BYBIT_FUTURES`
+- `BYBIT_FUTURES_TESTNET`
 - `GATE_SPOT_TESTNET`
 - `GATE_SPOT`
-- `GATE_FUTURES_BTC`
-- `GATE_FUTURES_BTC_TESTNET`
 - `GATE_FUTURES_USDT`
 - `GATE_FUTURES_USDT_TESTNET`
 - `KRAKEN`
 - `KRAKEN_FUTURES_DEMO`
 
+Venue strings that currently have URL mapping but no dedicated subscription
+payload in `get_message(...)`:
+
+- `BINANCE_FUTURES`
+- `OKX`
+- `OKX_DEMO`
+- `GATE_FUTURES_BTC`
+- `GATE_FUTURES_BTC_TESTNET`
+
 ## Examples
 
 ```bash
 python md_websocket.py -v BINANCEUS_SPOT
+python md_websocket.py -v OKX_SPOT
+python md_websocket.py -v BYBIT_FUTURES
 python md_websocket.py -v HYPERLIQUID
 python md_websocket.py -v DYDX_TESTNET
 python md_websocket.py -v KRAKEN
