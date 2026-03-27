@@ -60,6 +60,7 @@ The script contains venue mappings in code. For reliable end-to-end behavior
 - `GATE_FUTURES_USDT_TESTNET`
 - `KRAKEN`
 - `KRAKEN_FUTURES_DEMO`
+- `COINBASE`
 
 Venue strings that currently have URL mapping but no dedicated subscription
 payload in `get_message(...)`:
@@ -79,12 +80,14 @@ python md_websocket.py -v BYBIT_FUTURES
 python md_websocket.py -v HYPERLIQUID
 python md_websocket.py -v DYDX_TESTNET
 python md_websocket.py -v KRAKEN
+python md_websocket.py -v COINBASE
 ```
 
 ## Output behavior
 
 - For Binance-style payloads containing `stream`, it prints:
   symbol, price, and exchange event time.
+- For Coinbase ticker payloads, it prints: symbol, price, and exchange time.
 - For all other payload formats, it prints the full raw message.
 
 ## Notes

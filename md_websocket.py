@@ -51,6 +51,8 @@ def get_url(venue):
         url = 'wss://ws.kraken.com/v2' # success
     elif venue == 'KRAKEN_FUTURES_DEMO':
         url = 'wss://demo-futures.kraken.com/ws/v1' # success
+    elif venue == 'COINBASE':
+        url = 'wss://ws-feed.exchange.coinbase.com' # success
     return url
 
 def get_message(venue):
@@ -146,13 +148,21 @@ def get_message(venue):
                 "PI_XBTUSD"
             ]
         }
+    elif venue == 'COINBASE':
+        msg = {
+            "type": "subscribe",
+            "product_ids": ["BTC-USD"],
+            "channels": ["ticker"]
+        }
     return msg
 
 def on_message(ws, message):
     data = json.loads(message)
-    if 'stream' in data:
+    if isinstance(data, dict) and 'stream' in data:
         # you can pipeline this data to your function, analysis or backtesting
         print(f"Symbol: {data['data']['s']}, Price: {data['data']['c']}, Time: {data['data']['E']}")
+    elif isinstance(data, dict) and data.get("type") == "ticker" and data.get("product_id") and data.get("price"):
+        print(f"Symbol: {data['product_id']}, Price: {data['price']}, Time: {data.get('time')}")
     else:
         print(f"Received message: {message}")
 
