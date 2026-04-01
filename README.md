@@ -61,6 +61,12 @@ The script contains venue mappings in code. For reliable end-to-end behavior
 - `KRAKEN`
 - `KRAKEN_FUTURES_DEMO`
 - `COINBASE`
+- `BITGET_SPOT`
+- `BITGET_FUTURES`
+- `KUCOIN_SPOT`
+- `KUCOIN_FUTURES`
+- `DERIBIT`
+- `DERIBIT_TESTNET`
 
 Venue strings that currently have URL mapping but no dedicated subscription
 payload in `get_message(...)`:
@@ -81,6 +87,9 @@ python md_websocket.py -v HYPERLIQUID
 python md_websocket.py -v DYDX_TESTNET
 python md_websocket.py -v KRAKEN
 python md_websocket.py -v COINBASE
+python md_websocket.py -v BITGET_SPOT
+python md_websocket.py -v KUCOIN_SPOT
+python md_websocket.py -v DERIBIT
 ```
 
 ## Output behavior
@@ -94,6 +103,8 @@ python md_websocket.py -v COINBASE
 
 - Some endpoints in the script may be region-restricted (for example from US IPs)
   or may have changed behavior over time.
+- KuCoin WebSocket URLs are fetched dynamically via `bullet-public` before
+  connecting (`KUCOIN_SPOT` / `KUCOIN_FUTURES`).
 - `websocket.enableTrace(True)` is enabled, so low-level WebSocket logs are printed.
 - Venue strings are case-sensitive.
 

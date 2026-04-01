@@ -2,6 +2,32 @@ import websocket
 import json
 import threading
 import argparse
+import urllib.request
+
+
+def _fetch_kucoin_ws_url(venue):
+    if venue == 'KUCOIN_SPOT':
+        bullet_url = 'https://api.kucoin.com/api/v1/bullet-public'
+    elif venue == 'KUCOIN_FUTURES':
+        bullet_url = 'https://api-futures.kucoin.com/api/v1/bullet-public'
+    else:
+        return ''
+
+    req = urllib.request.Request(bullet_url, method='POST')
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        payload = json.loads(resp.read().decode('utf-8'))
+
+    if payload.get('code') != '200000':
+        raise RuntimeError(f"KuCoin bullet-public failed: {payload}")
+
+    data = payload.get('data') or {}
+    token = data.get('token')
+    servers = data.get('instanceServers') or []
+    endpoint = servers[0].get('endpoint') if servers else ''
+    if not token or not endpoint:
+        raise RuntimeError(f"KuCoin bullet-public missing token/endpoint: {payload}")
+    return f"{endpoint}?token={token}&connectId=md_websocket"
+
 
 def get_url(venue):
     url = ''
@@ -53,7 +79,18 @@ def get_url(venue):
         url = 'wss://demo-futures.kraken.com/ws/v1' # success
     elif venue == 'COINBASE':
         url = 'wss://ws-feed.exchange.coinbase.com' # success
+    elif venue == 'BITGET_SPOT':
+        url = 'wss://ws.bitget.com/v2/ws/public' # success
+    elif venue == 'BITGET_FUTURES':
+        url = 'wss://ws.bitget.com/v2/ws/public' # success
+    elif venue.startswith('KUCOIN'):
+        url = _fetch_kucoin_ws_url(venue) # requires bullet-public token
+    elif venue == 'DERIBIT':
+        url = 'wss://www.deribit.com/ws/api/v2' # success
+    elif venue == 'DERIBIT_TESTNET':
+        url = 'wss://test.deribit.com/ws/api/v2' # success
     return url
+
 
 def get_message(venue):
     msg = ''
@@ -154,7 +191,55 @@ def get_message(venue):
             "product_ids": ["BTC-USD"],
             "channels": ["ticker"]
         }
+    elif venue == 'BITGET_SPOT':
+        msg = {
+            "op": "subscribe",
+            "args": [
+                {
+                    "instType": "SPOT",
+                    "channel": "ticker",
+                    "instId": "BTCUSDT"
+                }
+            ]
+        }
+    elif venue == 'BITGET_FUTURES':
+        msg = {
+            "op": "subscribe",
+            "args": [
+                {
+                    "instType": "USDT-FUTURES",
+                    "channel": "ticker",
+                    "instId": "BTCUSDT"
+                }
+            ]
+        }
+    elif venue == 'KUCOIN_SPOT':
+        msg = {
+            "id": 1,
+            "type": "subscribe",
+            "topic": "/market/ticker:BTC-USDT",
+            "privateChannel": False,
+            "response": True
+        }
+    elif venue == 'KUCOIN_FUTURES':
+        msg = {
+            "id": 1,
+            "type": "subscribe",
+            "topic": "/contractMarket/tickerV2:XBTUSDTM",
+            "privateChannel": False,
+            "response": True
+        }
+    elif venue in ['DERIBIT', 'DERIBIT_TESTNET']:
+        msg = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "public/subscribe",
+            "params": {
+                "channels": ["ticker.BTC-PERPETUAL.raw"]
+            }
+        }
     return msg
+
 
 def on_message(ws, message):
     data = json.loads(message)
@@ -165,6 +250,7 @@ def on_message(ws, message):
         print(f"Symbol: {data['product_id']}, Price: {data['price']}, Time: {data.get('time')}")
     else:
         print(f"Received message: {message}")
+
 
 def on_error(ws, error):
     err = str(error)
@@ -177,8 +263,10 @@ def on_error(ws, error):
         return
     print(f"Error: {error}")
 
+
 def on_close(ws, close_status_code, close_msg):
     print(f"WebSocket connection closed: {close_status_code} - {close_msg}")
+
 
 def on_open(ws):
     print("WebSocket connection opened")
@@ -190,16 +278,20 @@ def on_open(ws):
     }
     ws.send(json.dumps(subscribe_message))
 
+
 class OnOpen:
     def __init__(self, msg):
         self.msg = msg
+
     def __call__(self, ws):
         ws.send(json.dumps(self.msg))
+
 
 def on_ping(ws, message):
     print(f"Received ping: {message}")
     ws.send(message, websocket.ABNF.OPCODE_PONG)
     print(f"Sent pong: {message}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
