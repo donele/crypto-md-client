@@ -1,7 +1,12 @@
 import websocket
+import base64
+import hashlib
+import hmac
 import json
+import os
 import threading
 import argparse
+import time
 import urllib.request
 
 
@@ -94,7 +99,55 @@ def get_url(venue):
     return url
 
 
-def get_message(venue):
+def _redact_message(msg):
+    if isinstance(msg, dict):
+        return {
+            key: 'REDACTED' if key in {'key', 'passphrase', 'signature', 'secret_key'} else _redact_message(value)
+            for key, value in msg.items()
+        }
+    if isinstance(msg, list):
+        return [_redact_message(value) for value in msg]
+    return msg
+
+
+def _coinbase_auth_fields():
+    api_key = os.environ.get('COINBASE_API_KEY')
+    passphrase = os.environ.get('COINBASE_PASSPHRASE')
+    secret_key = os.environ.get('COINBASE_SECRET_KEY')
+    missing = [
+        name for name, value in [
+            ('COINBASE_API_KEY', api_key),
+            ('COINBASE_PASSPHRASE', passphrase),
+            ('COINBASE_SECRET_KEY', secret_key),
+        ] if not value
+    ]
+    if missing:
+        raise RuntimeError(f"Missing Coinbase credential env vars: {', '.join(missing)}")
+
+    timestamp = f"{time.time():.6f}"
+    payload = f"{timestamp}GET/users/self/verify".encode('utf-8')
+    decoded_secret = base64.b64decode(secret_key)
+    signature = base64.b64encode(hmac.new(decoded_secret, payload, hashlib.sha256).digest()).decode('utf-8')
+    return {
+        "signature": signature,
+        "key": api_key,
+        "passphrase": passphrase,
+        "timestamp": timestamp,
+    }
+
+
+def _coinbase_message(product, channels, auth):
+    msg = {
+        "type": "subscribe",
+        "product_ids": [product],
+        "channels": channels,
+    }
+    if auth:
+        msg.update(_coinbase_auth_fields())
+    return msg
+
+
+def get_message(venue, product='BTC-USD', channel='ticker', auth=False):
     msg = ''
     if venue in ['BINANCEUS_SPOT', 'BINANCE_SPOT', 'BINANCE_SPOT_TESTNET']:
         msg = {
@@ -187,12 +240,9 @@ def get_message(venue):
                 "PI_XBTUSD"
             ]
         }
-    elif venue == 'COINBASE':
-        msg = {
-            "type": "subscribe",
-            "product_ids": ["BTC-USD"],
-            "channels": ["ticker"]
-        }
+    elif venue.startswith('COINBASE'):
+        channels = [channel]
+        msg = _coinbase_message(product, channels, auth)
     elif venue == 'BITGET_SPOT':
         msg = {
             "op": "subscribe",
@@ -283,10 +333,13 @@ def on_open(ws):
 
 class OnOpen:
     def __init__(self, msg):
-        self.msg = msg
+        self.msgs = msg if isinstance(msg, list) else [msg]
 
     def __call__(self, ws):
-        ws.send(json.dumps(self.msg))
+        for index, msg in enumerate(self.msgs):
+            encoded = json.dumps(msg)
+            print(f"Sending message {index + 1}: {json.dumps(_redact_message(msg))}")
+            ws.send(encoded)
 
 
 def on_ping(ws, message):
@@ -298,17 +351,24 @@ def on_ping(ws, message):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--venue', type=str, required=True)
+    parser.add_argument('--product', type=str, default='BTC-USD')
+    parser.add_argument('--channel', type=str, default='ticker')
+    parser.add_argument('--auth', action='store_true')
+    parser.add_argument('--timeout-sec', type=float, default=5.0)
+    parser.add_argument('--trace', action='store_true')
     a = parser.parse_args()
 
     url = get_url(a.venue)
-    msg = get_message(a.venue)
+    msg = get_message(a.venue, a.product, a.channel, a.auth)
     on_open_callable = OnOpen(msg)
 
-    websocket.enableTrace(True)
+    websocket.enableTrace(a.trace)
     ws = websocket.WebSocketApp(url,
                                 on_message=on_message,
                                 on_error=on_error,
                                 on_close=on_close,
                                 on_open=on_open_callable,
                                 on_ping=on_ping)
+    if a.timeout_sec > 0:
+        threading.Timer(a.timeout_sec, ws.close).start()
     ws.run_forever()
