@@ -77,8 +77,10 @@ def get_url(venue):
         url = 'wss://ws.kraken.com/v2' # success
     elif venue == 'KRAKEN_FUTURES_DEMO':
         url = 'wss://demo-futures.kraken.com/ws/v1' # success
+    elif venue == 'COINBASE_SANDBOX':
+        url = 'wss://ws-feed-public.sandbox.exchange.coinbase.com'
     elif venue == 'COINBASE':
-        url = 'wss://ws-feed.exchange.coinbase.com' # success
+        url = 'wss://ws-feed.exchange.coinbase.com' # ticker: success, level2: needs auth
     elif venue == 'BITGET_SPOT':
         url = 'wss://ws.bitget.com/v2/ws/public' # success
     elif venue == 'BITGET_FUTURES':
