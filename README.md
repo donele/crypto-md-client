@@ -67,6 +67,7 @@ The script contains venue mappings in code. For reliable end-to-end behavior
 - `KUCOIN_FUTURES`
 - `DERIBIT`
 - `DERIBIT_TESTNET`
+- `POLYMARKET`
 
 Venue strings that currently have URL mapping but no dedicated subscription
 payload in `get_message(...)`:
@@ -90,6 +91,7 @@ python md_websocket.py -v COINBASE
 python md_websocket.py -v BITGET_SPOT
 python md_websocket.py -v KUCOIN_SPOT
 python md_websocket.py -v DERIBIT
+python md_websocket.py -v POLYMARKET --product 21742633143463906290569050155826241533067272736897614950488156847949938836455
 ```
 
 ## Output behavior
@@ -105,6 +107,9 @@ python md_websocket.py -v DERIBIT
   or may have changed behavior over time.
 - KuCoin WebSocket URLs are fetched dynamically via `bullet-public` before
   connecting (`KUCOIN_SPOT` / `KUCOIN_FUTURES`).
+- `POLYMARKET` uses the public market WebSocket and requires one or more asset
+  IDs in `--product` (comma-separated for multiple assets), not a symbol like
+  `BTC-USD`.
 - `websocket.enableTrace(True)` is enabled, so low-level WebSocket logs are printed.
 - Venue strings are case-sensitive.
 
